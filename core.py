@@ -44,12 +44,12 @@ Paragraph:
     ]
 )
 
+
 def to_transformers_messages(messages):
     converted = []
 
     for message in messages:
         role = "system" if message.type == "system" else "user"
-
         converted.append(
             {
                 "role": role,
@@ -58,6 +58,8 @@ def to_transformers_messages(messages):
         )
 
     return converted
+
+
 def analyze_movie_paragraph(paragraph):
     formatted_messages = movie_prompt.format_messages(
         paragraph=paragraph
@@ -73,18 +75,20 @@ def analyze_movie_paragraph(paragraph):
 
     return result[0]["generated_text"][-1]["content"].strip()
 
-print("\nCinSage Movie Insights")
-print("Enter a movie paragraph. Type 0 to exit.\n")
 
-while True:
-    paragraph = input("Paragraph: ").strip()
+if __name__ == "__main__":
+    print("\nCinSage Movie Insights")
+    print("Enter a movie paragraph. Type 0 to exit.\n")
 
-    if paragraph == "0":
-        print("CinSage closed.")
-        break
+    while True:
+        paragraph = input("Paragraph: ").strip()
 
-    if not paragraph:
-        continue
+        if paragraph == "0":
+            print("CinSage closed.")
+            break
 
-    answer = analyze_movie_paragraph(paragraph)
-    print(f"\n{answer}\n")
+        if not paragraph:
+            continue
+
+        answer = analyze_movie_paragraph(paragraph)
+        print(f"\n{answer}\n")

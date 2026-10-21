@@ -43,3 +43,18 @@ Paragraph:
         ),
     ]
 )
+
+def to_transformers_messages(messages):
+    converted = []
+
+    for message in messages:
+        role = "system" if message.type == "system" else "user"
+
+        converted.append(
+            {
+                "role": role,
+                "content": str(message.content),
+            }
+        )
+
+    return converted

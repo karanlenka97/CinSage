@@ -72,3 +72,19 @@ def analyze_movie_paragraph(paragraph):
     )
 
     return result[0]["generated_text"][-1]["content"].strip()
+
+print("\nCinSage Movie Insights")
+print("Enter a movie paragraph. Type 0 to exit.\n")
+
+while True:
+    paragraph = input("Paragraph: ").strip()
+
+    if paragraph == "0":
+        print("CinSage closed.")
+        break
+
+    if not paragraph:
+        continue
+
+    answer = analyze_movie_paragraph(paragraph)
+    print(f"\n{answer}\n")

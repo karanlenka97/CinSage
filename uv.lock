@@ -228,7 +228,7 @@ wheels = [
 [[package]]
 name = "cinsage"
 version = "0.1.0"
-source = { editable = "." }
+source = { virtual = "." }
 dependencies = [
     { name = "langchain", extra = ["huggingface"] },
     { name = "langchain-core" },

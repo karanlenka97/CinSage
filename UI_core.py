@@ -40,3 +40,11 @@ st.markdown(
     """,
     unsafe_allow_html=True,
 )
+
+st.write("Paste a movie description to extract its key information.")
+
+paragraph = st.text_area(
+    "Movie paragraph",
+    placeholder="Paste a movie paragraph here...",
+    height=180,
+)

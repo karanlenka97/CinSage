@@ -58,3 +58,17 @@ def to_transformers_messages(messages):
         )
 
     return converted
+def analyze_movie_paragraph(paragraph):
+    formatted_messages = movie_prompt.format_messages(
+        paragraph=paragraph
+    )
+    model_messages = to_transformers_messages(formatted_messages)
+
+    result = chatbot(
+        model_messages,
+        do_sample=False,
+        repetition_penalty=1.1,
+        pad_token_id=chatbot.tokenizer.eos_token_id,
+    )
+
+    return result[0]["generated_text"][-1]["content"].strip()

@@ -1,13 +1,26 @@
+import html
+import re
+
 import streamlit as st
+
 from core import analyze_movie_paragraph
 
-st.set_page_config(page_title="CinSage", page_icon="🎬", layout="centered")
+
+st.set_page_config(
+    page_title="CinSage",
+    page_icon="🎬",
+    layout="centered",
+)
 
 st.markdown(
     """
     <style>
-    html, body, [data-testid="stAppViewContainer"], [data-testid="stHeader"],
-    [data-testid="stMain"], [data-testid="stMainBlockContainer"] {
+    html,
+    body,
+    [data-testid="stAppViewContainer"],
+    [data-testid="stHeader"],
+    [data-testid="stMain"],
+    [data-testid="stMainBlockContainer"] {
         background: #ffffff !important;
         color: #111111 !important;
     }
@@ -20,6 +33,109 @@ st.markdown(
     [data-testid="stHeader"] {
         background: #ffffff !important;
     }
+
+    .cinsage-brand {
+        display: flex;
+        align-items: center;
+        gap: 16px;
+        margin: 12px 0 4px;
+    }
+
+    .cinsage-logo {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        width: 58px;
+        height: 58px;
+        border: 1px solid #dedede;
+        border-radius: 16px;
+        background: #ffffff;
+        font-size: 32px;
+    }
+
+    .cinsage-title {
+        margin: 0;
+        color: #111111 !important;
+        font-size: 42px;
+        font-weight: 700;
+        line-height: 1.1;
+    }
+
+    .cinsage-caption {
+        margin: 4px 0 22px 74px;
+        color: #444444 !important;
+        font-size: 16px;
+    }
+
+    [data-testid="stTextArea"] label,
+    [data-testid="stTextArea"] label p {
+        color: #111111 !important;
+    }
+
+    [data-testid="stTextArea"] textarea {
+        background: #ffffff !important;
+        color: #111111 !important;
+        -webkit-text-fill-color: #111111 !important;
+        border: 1px solid #b8b8b8 !important;
+        border-radius: 12px !important;
+        box-shadow: none !important;
+    }
+
+    [data-testid="stTextArea"] textarea::placeholder {
+        color: #555555 !important;
+        -webkit-text-fill-color: #555555 !important;
+        opacity: 1 !important;
+    }
+
+    [data-testid="stTextArea"] textarea:focus {
+        border: 1px solid #333333 !important;
+        box-shadow: 0 0 0 2px rgba(0, 0, 0, 0.08) !important;
+    }
+
+    div[data-testid="stFormSubmitButton"] button,
+    div[data-testid="stFormSubmitButton"] button[kind="primaryFormSubmit"] {
+        background: #ffffff !important;
+        color: #111111 !important;
+        border: 1px solid #b8b8b8 !important;
+        border-radius: 10px !important;
+        box-shadow: none !important;
+    }
+
+    div[data-testid="stFormSubmitButton"] button *,
+    div[data-testid="stFormSubmitButton"] button[kind="primaryFormSubmit"] * {
+        color: #111111 !important;
+        -webkit-text-fill-color: #111111 !important;
+    }
+
+    div[data-testid="stFormSubmitButton"] button:hover {
+        background: #f5f5f5 !important;
+        border-color: #777777 !important;
+    }
+
+    .analysis-card {
+        margin-top: 20px;
+        padding: 22px 24px;
+        background: #ffffff;
+        color: #111111 !important;
+        border: 1px solid #dedede;
+        border-radius: 14px;
+        line-height: 1.75;
+        overflow-wrap: anywhere;
+    }
+
+    .analysis-card * {
+        color: #111111 !important;
+    }
+
+    @media (max-width: 600px) {
+        .cinsage-title {
+            font-size: 34px;
+        }
+
+        .cinsage-caption {
+            margin-left: 0;
+        }
+    }
     </style>
     """,
     unsafe_allow_html=True,
@@ -27,28 +143,16 @@ st.markdown(
 
 st.markdown(
     """
-    <div style="display:flex; align-items:center; gap:16px; margin:12px 0 4px;">
-        <div style="display:flex; align-items:center; justify-content:center;
-                    width:58px; height:58px; border:1px solid #dedede;
-                    border-radius:16px; background:#fff; font-size:32px;">
-            🎬
-        </div>
-        <h1 style="margin:0; color:#111;">CinSage</h1>
+    <div class="cinsage-brand">
+        <div class="cinsage-logo">🎬</div>
+        <h1 class="cinsage-title">CinSage</h1>
     </div>
-    <p style="margin:4px 0 22px 74px; color:#444;">
-        Movie insights, clearly presented
-    </p>
+    <p class="cinsage-caption">Movie insights, clearly presented</p>
     """,
     unsafe_allow_html=True,
 )
 
 st.write("Paste a movie description to extract its key information.")
-
-paragraph = st.text_area(
-    "Movie paragraph",
-    placeholder="Paste a movie paragraph here...",
-    height=180,
-)
 
 with st.form("movie_analysis_form"):
     paragraph = st.text_area(
@@ -58,71 +162,43 @@ with st.form("movie_analysis_form"):
     )
     submitted = st.form_submit_button("Analyze paragraph")
 
-[data-testid="stTextArea"] textarea {
-    background: #ffffff !important;
-    color: #111111 !important;
-    -webkit-text-fill-color: #111111 !important;
-    border: 1px solid #b8b8b8 !important;
-    border-radius: 12px !important;
-    box-shadow: none !important;
-}
+if submitted:
+    if not paragraph.strip():
+        st.warning("Please enter a movie paragraph first.")
+    else:
+        try:
+            with st.spinner("Analyzing the movie paragraph..."):
+                analysis = analyze_movie_paragraph(paragraph.strip())
 
-[data-testid="stTextArea"] textarea::placeholder {
-    color: #555555 !important;
-    opacity: 1 !important;
-}
+            labels = (
+                "Title",
+                "Release year",
+                "Director",
+                "Main cast",
+                "Genre",
+                "Setting and premise",
+                "Key themes",
+                "Tone and style",
+                "Notable strengths",
+                "Reception details",
+                "Quick summary",
+                "Insights",
+            )
 
-div[data-testid="stFormSubmitButton"] button {
-    background: #ffffff !important;
-    color: #111111 !important;
-    border: 1px solid #b8b8b8 !important;
-    border-radius: 10px !important;
-    box-shadow: none !important;
-}
+            formatted_analysis = str(analysis).strip()
 
-div[data-testid="stFormSubmitButton"] button:hover {
-    background: #f5f5f5 !important;
-}
+            for label in labels:
+                formatted_analysis = re.sub(
+                    rf"(?i)(?<!^)\s*({re.escape(label)}\s*:)",
+                    r"\n\n\1",
+                    formatted_analysis,
+                )
 
-if submitted and not paragraph.strip():
-    st.warning("Please enter a movie paragraph first.")
+            safe_analysis = html.escape(formatted_analysis).replace("\n", "<br>")
 
-labels = (
-    "Title",
-    "Release year",
-    "Director",
-    "Main cast",
-    "Genre",
-    "Setting and premise",
-    "Key themes",
-    "Tone and style",
-    "Notable strengths",
-    "Reception details",
-    "Quick summary",
-    "Insights",
-)
-
-formatted_analysis = str(analysis).strip()
-
-for label in labels:
-    formatted_analysis = re.sub(
-        rf"(?i)(?<!^)\s*({re.escape(label)}\s*:)",
-        r"\n\n\1",
-        formatted_analysis,
-    )
-
-st.markdown(
-    f"""
-    <div style="background:#fff; color:#111; border:1px solid #dedede;
-                border-radius:14px; padding:22px 24px; line-height:1.75;
-                white-space:pre-wrap;">
-        {formatted_analysis}
-    </div>
-    """,
-    unsafe_allow_html=True,
-)
-
-if submitted and paragraph.strip():
-    with st.spinner("Analyzing the movie paragraph..."):
-        analysis = analyze_movie_paragraph(paragraph.strip())
-        st.write(analysis)
+            st.markdown(
+                f'<div class="analysis-card">{safe_analysis}</div>',
+                unsafe_allow_html=True,
+            )
+        except Exception as error:
+            st.error(f"Could not analyze the paragraph: {error}")

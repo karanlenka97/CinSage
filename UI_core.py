@@ -121,3 +121,8 @@ st.markdown(
     """,
     unsafe_allow_html=True,
 )
+
+if submitted and paragraph.strip():
+    with st.spinner("Analyzing the movie paragraph..."):
+        analysis = analyze_movie_paragraph(paragraph.strip())
+        st.write(analysis)

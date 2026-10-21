@@ -48,3 +48,11 @@ paragraph = st.text_area(
     placeholder="Paste a movie paragraph here...",
     height=180,
 )
+
+with st.form("movie_analysis_form"):
+    paragraph = st.text_area(
+        "Movie paragraph",
+        placeholder="Paste a movie paragraph here...",
+        height=180,
+    )
+    submitted = st.form_submit_button("Analyze paragraph")

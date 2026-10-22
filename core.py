@@ -1,94 +1,57 @@
+from typing import List, Optional
+
+from pydantic import BaseModel
 from transformers import pipeline
 from langchain_core.prompts import ChatPromptTemplate
+from langchain_core.output_parsers import PydanticOutputParser
 
-MODEL_NAME = "TinyLlama/TinyLlama-1.1B-Chat-v1.0"
 
-chatbot = pipeline(
+model = pipeline(
     "text-generation",
-    model=MODEL_NAME,
-)
-
-movie_prompt = ChatPromptTemplate.from_messages(
-    [
-        (
-            "system",
-            (
-                "Analyze movie descriptions accurately and concisely. "
-                "Use only details stated or clearly supported by the "
-                "paragraph. Do not add outside facts. Write 'Not stated' "
-                "when information is missing. Label interpretations as "
-                "inferences."
-            ),
-        ),
-        (
-            "human",
-            """Analyze this movie paragraph.
-
-Use these headings:
-Title:
-Release year:
-Director:
-Main cast:
-Genre:
-Setting and premise:
-Key themes:
-Tone and style:
-Notable strengths:
-Reception details:
-Quick summary:
-Key insights:
-
-Paragraph:
-{paragraph}""",
-        ),
-    ]
+    model="TinyLlama/TinyLlama-1.1B-Chat-v1.0",
 )
 
 
-def to_transformers_messages(messages):
-    converted = []
-
-    for message in messages:
-        role = "system" if message.type == "system" else "user"
-        converted.append(
-            {
-                "role": role,
-                "content": str(message.content),
-            }
-        )
-
-    return converted
+class Movie(BaseModel):
+    title: str
+    release_year: Optional[int] = None
+    genre: List[str]
+    director: Optional[str] = None
+    cast: List[str]
+    rating: Optional[float] = None
+    summary: str
 
 
-def analyze_movie_paragraph(paragraph):
-    formatted_messages = movie_prompt.format_messages(
-        paragraph=paragraph
-    )
-    model_messages = to_transformers_messages(formatted_messages)
+parser = PydanticOutputParser(pydantic_object=Movie)
 
-    result = chatbot(
-        model_messages,
-        do_sample=False,
-        repetition_penalty=1.1,
-        pad_token_id=chatbot.tokenizer.eos_token_id,
-    )
+prompt = ChatPromptTemplate.from_messages([
+    (
+        "system",
+        "Extract movie information using only facts stated in the paragraph. "
+        "Do not guess. Use null for missing optional values and empty lists "
+        "when no list items are stated.\n{format_instructions}",
+    ),
+    ("human", "{paragraph}"),
+])
 
-    return result[0]["generated_text"][-1]["content"].strip()
+paragraph = input("Give your paragraph: ")
 
+final_prompt = prompt.invoke({
+    "paragraph": paragraph,
+    "format_instructions": parser.get_format_instructions(),
+})
 
-if __name__ == "__main__":
-    print("\nCinSage Movie Insights")
-    print("Enter a movie paragraph. Type 0 to exit.\n")
+messages = [
+    {
+        "role": {"system": "system", "human": "user"}.get(message.type, "assistant"),
+        "content": str(message.content),
+    }
+    for message in final_prompt.to_messages()
+]
 
-    while True:
-        paragraph = input("Paragraph: ").strip()
+result = model(messages, do_sample=False)
+generated = result[0]["generated_text"]
+response_text = generated[-1]["content"] if isinstance(generated, list) else generated
 
-        if paragraph == "0":
-            print("CinSage closed.")
-            break
-
-        if not paragraph:
-            continue
-
-        answer = analyze_movie_paragraph(paragraph)
-        print(f"\n{answer}\n")
+movie_data = parser.parse(response_text)
+print(movie_data)
